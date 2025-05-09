@@ -1,20 +1,34 @@
 # Nile Readiness Test (NRT)
 
-This tool helps test network connectivity and features required for Nile Connect, including Geneve protocol support.
+This tool helps test network connectivity and features required for Nile Connect on macOS.
 
 ## Features
 
-- Geneve protocol testing (UDP port 6081)
-  - Kernel tunnel creation method
-  - Scapy packet method
-  - Basic UDP connectivity fallback
+- Network interface configuration
+- Loopback interface creation for subnet testing
+- Static route configuration
+- OSPF Hello packet detection
+- Comprehensive connectivity testing:
+  - DNS resolution
+  - DHCP relay functionality (optional)
+  - RADIUS authentication (optional)
+  - NTP synchronization
+  - HTTPS connectivity
+  - SSL certificate validation
+  - UDP connectivity testing
 
 ## Requirements
 
+- macOS
 - Python 3.6+
-- Scapy (with Geneve module support)
+- Scapy (for packet sniffing)
 - Root/sudo privileges (for network operations)
-- Netcat (nc) for UDP connectivity testing
+- Required utilities:
+  - dig (DNS lookup utility)
+  - curl (HTTPS test utility)
+  - nc (Netcat for UDP connectivity testing)
+  - openssl (SSL certificate verification)
+  - ntplib Python library (optional, for NTP tests)
 
 ## Installation
 
@@ -26,62 +40,110 @@ This tool helps test network connectivity and features required for Nile Connect
 
 2. Install required Python packages:
    ```
-   pip install scapy dhcppython
+   pip install scapy dhcppython ntplib
    ```
 
 ## Usage
 
-### Testing Geneve Protocol Support
+### Basic Usage
 
-Test Geneve protocol support using the main script:
+Run the main script with sudo privileges:
 
 ```bash
-# Test Geneve protocol support on a specific target
-sudo ./nrt.py --geneve-test --target 145.40.90.203
+# Interactive mode (prompts for configuration)
+sudo ./nrt.py
+
+# Using a configuration file
+sudo ./nrt.py --config nrt_config.json
 
 # Enable debug output for more detailed information
-sudo ./nrt.py --geneve-test --target 145.40.90.203 --debug
-
-# If no target is specified, it will use the first IP from the GUEST_IPS list
-sudo ./nrt.py --geneve-test
+sudo ./nrt.py --debug
 ```
 
-## How Geneve Testing Works
+### Configuration File
 
-The Geneve testing functionality uses two methods to test if a target supports the Geneve protocol:
+You can use a JSON configuration file instead of interactive prompts. Example configuration:
 
-1. **Kernel Tunnel Method**: Attempts to create a Geneve tunnel to the target using the Linux kernel's native Geneve support.
-   - Checks if the kernel supports Geneve tunnels
-   - Creates a Geneve tunnel to the target
-   - Assigns an IP address to the tunnel
-   - Brings the tunnel up
-   - Checks if the tunnel is in UP state
+```json
+{
+  "mgmt_interface": "en0",
+  "test_interface": "en7",
+  "ip_address": "10.200.1.2",
+  "netmask": "255.255.255.252",
+  "gateway": "10.200.1.1",
+  "nsb_subnet": "10.200.10.0/24",
+  "sensor_subnet": "10.200.12.0/24",
+  "client_subnet": "10.234.3.0/24",
+  "run_dhcp_tests": true,
+  "dhcp_servers": ["172.27.5.5"],
+  "run_radius_tests": false,
+  "radius_servers": [],
+  "radius_secret": "",
+  "radius_username": "",
+  "radius_password": "",
+  "run_custom_dns_tests": true,
+  "custom_dns_servers": ["4.2.2.1", "1.1.1.1"],
+  "run_custom_ntp_tests": false,
+  "custom_ntp_servers": ["ntp.internal.example.com", "10.0.0.123"]
+}
+```
 
-2. **Scapy Packet Method**: Uses Scapy to send and receive Geneve packets.
-   - Sends a Geneve packet to the target
-   - Sniffs for a response
-   - Analyzes the response to determine if it's a Geneve packet
+## How It Works
 
-3. **Basic UDP Connectivity Fallback**: If both methods fail, it checks if the UDP port is open.
-   - Uses netcat to check if the UDP port is open
-   - Provides troubleshooting information
+The Nile Readiness Test performs the following operations:
+
+1. **Records the original state** of the network interface to restore it later
+2. **Configures the test interface** with the specified IP address and netmask
+3. **Creates loopback aliases** for each subnet (NSB, sensor, and client)
+4. **Configures a static default route** via the specified gateway
+5. **Detects OSPF Hello packets** on the test interface
+6. **Runs connectivity tests**:
+   - DNS resolution using specified DNS servers
+   - DHCP relay tests (if enabled)
+   - RADIUS authentication tests (if enabled)
+   - NTP synchronization tests
+   - HTTPS connectivity tests to Nile Cloud and AWS S3
+   - SSL certificate validation
+   - UDP connectivity tests
+7. **Restores the original state** of the system
+8. **Prints a summary** of test results
 
 ## Troubleshooting
 
-- **Kernel Tunnel Method Fails**:
-  - Check if your kernel supports Geneve tunnels (`modprobe geneve`)
-  - Verify you have permission to create network interfaces (run as root/sudo)
-  - Check network connectivity to the target
+- **Interface Configuration Fails**:
+  - Verify you have permission to configure network interfaces (run as root/sudo)
+  - Check if the interface exists and is not in use by another application
+  - Ensure the IP address and netmask are valid and not already in use
 
-- **Scapy Packet Method Fails**:
-  - Check if Scapy is installed with Geneve support
-  - Verify you have permission to send raw packets (run as root/sudo)
-  - Check if the interface is up and has proper IP configuration
+- **Static Route Configuration Fails**:
+  - Verify the gateway IP is reachable
+  - Check if there are conflicting routes in the routing table
+  - Ensure the interface is up and properly configured
 
-- **Basic UDP Connectivity Fails**:
-  - Check if the target is running
-  - Verify there is no firewall blocking UDP traffic to port 6081
-  - The target may not support Geneve protocol
+- **DNS Tests Fail**:
+  - Check if the DNS servers are reachable
+  - Verify there is no firewall blocking DNS traffic (UDP/TCP port 53)
+  - Try alternative DNS servers
+
+- **DHCP Tests Fail**:
+  - Verify the DHCP servers are reachable
+  - Check if the client subnet is properly configured
+  - Ensure there is no firewall blocking DHCP traffic (UDP ports 67/68)
+
+- **RADIUS Tests Fail**:
+  - Verify the RADIUS servers are reachable
+  - Check if the shared secret, username, and password are correct
+  - Ensure there is no firewall blocking RADIUS traffic (UDP port 1812)
+
+- **NTP Tests Fail**:
+  - Verify the NTP servers are reachable
+  - Ensure there is no firewall blocking NTP traffic (UDP port 123)
+  - Install the ntplib Python library if missing
+
+- **HTTPS/SSL Tests Fail**:
+  - Verify the target servers are reachable
+  - Check if there is no firewall blocking HTTPS traffic (TCP port 443)
+  - Ensure the system has proper root certificates installed
 
 ## License
 
