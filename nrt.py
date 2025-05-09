@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-nrt.py - Configures host interface, OSPF adjacency dynamically,
-loopback interfaces, default route fallback, connectivity tests (DHCP/RADIUS,
-NTP, HTTPS), then restores host to original state (including removing FRR config,
-stopping FRR) and DNS changes.
+nrt.py - Configures host interface, loopback interfaces, default route,
+and performs connectivity tests (DNS, DHCP/RADIUS, NTP, HTTPS) on macOS,
+then restores host to original state including DNS changes.
 
-This script runs in the default namespace and uses the specified interface for FRR tests,
-allowing VNC to run in a separate namespace on another interface.
+This script is designed for macOS and tests network connectivity and features
+required for Nile Connect.
 
 Usage: 
   sudo ./nrt.py [--debug] [--config CONFIG_FILE]
@@ -47,9 +46,10 @@ except ImportError:
 # Constants for Nile Connect tests
 NILE_HOSTNAME = "ne-u1.nile-global.cloud"
 S3_HOSTNAME = "s3.us-west-2.amazonaws.com"
+# Guest IPs for UDP connectivity testing (currently disabled)
 GUEST_IPS = ["145.40.90.203","145.40.64.129","145.40.113.105","147.28.179.61"]
-UDP_PORT = 6081
-SSL_PORT = 443
+UDP_PORT = 6081  # Used for UDP connectivity tests
+SSL_PORT = 443   # Used for HTTPS/TLS connectivity tests
 
 # Check UDP connectivity using netcat
 def check_udp_connectivity_netcat(ip: str, port: int = UDP_PORT, timeout: int = 5, source_ip: str = None) -> bool:
@@ -181,10 +181,8 @@ RESET = '\033[0m'
 
 # Pre-flight checks
 required_bins = {
-    # 'vtysh': 'FRR (vtysh)', # Removed for macOS compatibility
     # 'radclient': 'FreeRADIUS client (radclient)', # Assuming it's available or handled by user
     'dig': 'DNS lookup utility (dig)',
-    # 'sntp': 'SNTP utility (for NTP checks, replaces ntpdate)', # Replaced by ntplib
     'curl': 'HTTPS test utility (curl)', 
     'nc': 'Netcat (nc) for UDP connectivity testing',
     'openssl': 'OpenSSL for SSL certificate verification'
@@ -1330,12 +1328,12 @@ def run_tests(iface, ip_addr, mgmt1, client_subnet, dhcp_servers, radius_servers
     
     This function tests:
     - DNS resolution and connectivity
-    - DHCP relay functionality
-    - RADIUS authentication
+    - DHCP relay functionality (if enabled)
+    - RADIUS authentication (if enabled)
     - NTP synchronization
     - HTTPS connectivity
     - SSL certificate validation
-    - UDP connectivity to guest access points
+    - (UDP connectivity to guest access points is currently disabled)
     
     Args:
         iface: The network interface to use for tests
@@ -1782,9 +1780,10 @@ def run_tests(iface, ip_addr, mgmt1, client_subnet, dhcp_servers, radius_servers
     print(f'HTTPS/TLS {NILESECURE_HOSTNAME} from {mgmt1_ip}: ' + (GREEN+'Success'+RESET if https_conn_ok_secure_mgmt1 else RED+'Fail'+RESET))
     test_results.append((f'HTTPS/TLS Connectivity {NILESECURE_HOSTNAME} from {mgmt1_ip}', https_conn_ok_secure_mgmt1))
     
+    # UDP Connectivity Check for Guest Access is currently disabled
+    # This test would check connectivity to UDP port 6081 on Nile guest access points
+    # Uncomment and fix the following code block to enable this test if needed:
     '''
-    ###### Test is not working #####
-    # UDP Connectivity Check for Guest Access
     print(f'\n=== UDP Connectivity Check for Guest Access ===')
     guest_success = False
     
@@ -1840,15 +1839,15 @@ def print_test_summary(test_results):
 # Main flow
 def main():
     """
-    Main execution flow of the Nile Readiness Test.
+    Main execution flow of the Nile Readiness Test for macOS.
     
     This function:
     1. Gathers configuration parameters from file or user input
     2. Records the original state of the network interface
     3. Configures the interface and adds loopback interfaces
     4. Sets up a static default route
-    5. Configures OSPF routing
-    6. Runs connectivity tests (DNS, DHCP, RADIUS, NTP, HTTPS, UDP)
+    5. Detects OSPF Hello packets (passive detection only)
+    6. Runs connectivity tests (DNS, DHCP, RADIUS, NTP, HTTPS, SSL)
     7. Restores the original state of the system
     8. Prints a summary of test results
     """
