@@ -1571,9 +1571,11 @@ def run_tests(iface, ip_addr, mgmt1, client_subnet, dhcp_servers, radius_servers
                 if DEBUG:
                     print(f"Creating DHCP client on {iface} interface...")
                 c = dhcp_client.DHCPClient(
-                    iface,
-                    send_from_port=67,  # Server port (for relay)
-                    send_to_port=67     # Server port
+                    iface=iface,          # Main test interface (e.g., en0), used for MAC lookup etc.
+                    iface_ip=helper_ip,   # Explicitly tell dhcppython to use helper_ip (giaddr) for socket binding
+                    send_from_port=67,    # Source port for outgoing DHCP Discover packets (as a relay)
+                    send_to_port=67,      # Destination port on the DHCP server
+                    listen_on_port=67     # Port on helper_ip where the DHCP Offer will be received
                 )
                 
                 # Create a list of DHCP options
