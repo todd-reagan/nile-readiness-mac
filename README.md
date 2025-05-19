@@ -51,6 +51,7 @@ This tool helps test network connectivity and features required for Nile Connect
     ```bash
     pip3 install -r requirements.txt
     ```
+    *   `scapy` is the correct package for Python 3.
     *   `ntplib` is used for Python-based NTP checks. If it's not installed, NTP tests relying on it will be skipped.
 
 ## Usage
