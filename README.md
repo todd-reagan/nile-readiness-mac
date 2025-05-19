@@ -23,25 +23,35 @@ This tool helps test network connectivity and features required for Nile Connect
 - Python 3.6+
 - Scapy (for packet sniffing)
 - Root/sudo privileges (for network operations)
-- Required utilities:
-  - dig (DNS lookup utility)
-  - curl (HTTPS test utility)
-  - nc (Netcat for UDP connectivity testing)
-  - openssl (SSL certificate verification)
-  - ntplib Python library (optional, for NTP tests)
 
 ## Installation
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/nile-readiness-test.git
-   cd nile-readiness-test
-   ```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/yourusername/nile-readiness-test.git
+    cd nile-readiness-test
+    ```
 
-2. Install required Python packages:
-   ```
-   pip install scapy dhcppython ntplib
-   ```
+2.  **Install System Utilities (using Homebrew):**
+    The script requires several command-line utilities. You can install them using Homebrew:
+    ```bash
+    brew install dnsmasq curl netcat openssl
+    ```
+    *   `dnsmasq` provides `dig`.
+    *   `curl`, `netcat`, and `openssl` are also essential.
+
+3.  **Install Python Dependencies:**
+    Create a `requirements.txt` file with the following content:
+    ```
+    scapy
+    dhcppython
+    ntplib
+    ```
+    Then, install the packages using `pip3`:
+    ```bash
+    pip3 install -r requirements.txt
+    ```
+    *   `ntplib` is used for Python-based NTP checks. If it's not installed, NTP tests relying on it will be skipped.
 
 ## Usage
 
