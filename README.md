@@ -35,10 +35,11 @@ This tool helps test network connectivity and features required for Nile Connect
 2.  **Install System Utilities (using Homebrew):**
     The script requires several command-line utilities. You can install them using Homebrew:
     ```bash
-    brew install dnsmasq curl netcat openssl
+    brew install dnsmasq curl netcat openssl freeradius-server
     ```
     *   `dnsmasq` provides `dig`.
-    *   `curl`, `netcat`, and `openssl` are also essential.
+    *   `curl`, `netcat`, and `openssl` are essential.
+    *   `freeradius-server` provides `radclient`, which is needed if you intend to run RADIUS tests.
 
 3.  **Install Python Dependencies:**
     Create a `requirements.txt` file with the following content:
