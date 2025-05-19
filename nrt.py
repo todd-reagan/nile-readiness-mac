@@ -665,25 +665,12 @@ def restore_state(iface, state):
             # Interface specification for default route on macOS is usually implicit or handled by gateway reachability
             if DEBUG: print(f"  Adding default route: {' '.join(cmd)}")
             run_cmd(cmd, check=False, capture_output=True)
-    
-    # Restore FRR configuration - Removed for macOS
-    # if DEBUG:
-    #     print("Restoring FRR configuration...")
-    # if state.get('daemons'): # Check if daemons key exists
-    #     with open('/etc/frr/daemons','w') as f: f.write(state['daemons'])
-    # run_cmd(['rm','-f','/etc/frr/frr.conf'], check=False, capture_output=True) # FRR specific
-    
+        
     # Restore DNS configuration
     if DEBUG:
         print("Restoring DNS configuration...")
     with open('/etc/resolv.conf','w') as f: f.write(state['resolv']) # This file exists on macOS
-    
-    # Stop and disable FRR - Removed for macOS
-    # if DEBUG:
-    #     print("Stopping and disabling FRR...")
-    # run_cmd(['systemctl','stop','frr'], check=False, capture_output=True) # systemd specific
-    # run_cmd(['systemctl','disable','frr'], check=False, capture_output=True) # systemd specific
-    
+        
     if DEBUG:
         # print('Removed FRR config, stopped service, restored DNS.')
         print('Restored DNS. FRR parts skipped for macOS.')
