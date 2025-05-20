@@ -1644,8 +1644,9 @@ def run_tests(iface, ip_addr, mgmt1, client_subnet, dhcp_servers, radius_servers
                                                         print(f"    Source: {pkt[IP].src}:{pkt[UDP].sport}")
                                                         print(f"    Destination: {pkt[IP].dst}:{pkt[UDP].dport}")
                                                     offer_received = True
-                                                    return True
-                        return False
+                                                    return None
+                        # Return None instead of False to prevent printing
+                        return None
                     
                     # Start sniffing in a separate thread
                     if DEBUG:
